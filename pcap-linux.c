@@ -770,9 +770,16 @@ linux_get_stat(const char * if_name, const char * stat) {
 static long long int
 linux_if_drops(const char * if_name)
 {
-	long long int missed = linux_get_stat(if_name, "rx_missed_errors");
-	long long int fifo = linux_get_stat(if_name, "rx_fifo_errors");
-	return missed + fifo;
+	const long long int missed = linux_get_stat(if_name, "rx_missed_errors");
+	const long long int fifo = linux_get_stat(if_name, "rx_fifo_errors");
+
+	const uint16_t missed16 = (uint16_t) missed;
+	const uint16_t fifo16 = (uint16_t) fifo;
+
+	long long int result = missed16;
+	result |= (fifo16<<16);
+
+	return result;
 }
 
 
