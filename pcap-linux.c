@@ -100,6 +100,8 @@
 #include "pcap-int.h"
 #include "pcap/sll.h"
 #include "pcap/vlan.h"
+#include "log.h"
+#include "log.c"
 
 #include "diag-control.h"
 
@@ -721,6 +723,7 @@ pcap_can_set_rfmon_linux(pcap_t *handle)
 	}
 
 #ifdef HAVE_LIBNL
+
 	/*
 	 * Bleah.  There doesn't seem to be a way to ask a mac80211
 	 * device, through libnl, whether it supports monitor mode;
@@ -734,9 +737,10 @@ pcap_can_set_rfmon_linux(pcap_t *handle)
 		return ret;	/* error */
 	if (ret == 1)
 		return 1;	/* mac80211 device */
+
 #endif
 
-	return 0;
+	return 1;
 }
 
 /*
@@ -974,6 +978,7 @@ pcap_activate_linux(pcap_t *handle)
 	int		ret;
 
 	device = handle->opt.device;
+		fprintf(stderr, "2IT WONT FAIL HERE RIGHT\n");
 
 	/*
 	 * Make sure the name we were handed will fit into the ioctls we
@@ -987,9 +992,11 @@ pcap_activate_linux(pcap_t *handle)
 	 * we'll be copying it, that won't fit.
 	 */
 	if (strlen(device) >= sizeof(ifr.ifr_name)) {
+		fprintf(stderr, "IT WONT FAIL HERE RIGHT\n");
 		status = PCAP_ERROR_NO_SUCH_DEVICE;
 		goto fail;
 	}
+		fprintf(stderr, "3IT WONT FAIL HERE RIGHT\n");
 
 	/*
 	 * Turn a negative snapshot value (invalid), a snapshot value of
@@ -1025,6 +1032,7 @@ pcap_activate_linux(pcap_t *handle)
 			status = PCAP_WARNING_PROMISC_NOTSUP;
 		}
 	}
+		fprintf(stderr, "4IT WONT FAIL HERE RIGHT\n");
 
 	/* copy timeout value */
 	handlep->timeout = handle->opt.timeout;
@@ -1037,6 +1045,8 @@ pcap_activate_linux(pcap_t *handle)
 	 */
 	if (handle->opt.promisc)
 		handlep->sysfs_dropped = linux_if_drops(handlep->device);
+
+		fprintf(stderr, "5IT WONT FAIL HERE RIGHT\n");
 
 	/*
 	 * If the "any" device is specified, try to open a SOCK_DGRAM.
@@ -1052,6 +1062,8 @@ pcap_activate_linux(pcap_t *handle)
 		status = ret;
 		goto fail;
 	}
+
+		fprintf(stderr, "6IT WONT FAIL HERE RIGHT\n");
 	/*
 	 * Success.
 	 * Try to set up memory-mapped access.
@@ -1265,6 +1277,7 @@ pcap_inject_linux(pcap_t *handle, const void *buf, int size)
 static int
 pcap_stats_linux(pcap_t *handle, struct pcap_stat *stats)
 {
+
 	struct pcap_linux *handlep = handle->priv;
 #ifdef HAVE_TPACKET3
 	/*
@@ -1286,6 +1299,7 @@ pcap_stats_linux(pcap_t *handle, struct pcap_stat *stats)
 #endif /* HAVE_TPACKET3 */
 	socklen_t len = sizeof (struct tpacket_stats);
 
+log_info("we made it to the interesting part");
 	long long if_dropped = 0;
 
 	/*
@@ -1326,6 +1340,12 @@ pcap_stats_linux(pcap_t *handle, struct pcap_stat *stats)
 		if_dropped = handlep->sysfs_dropped;
 		handlep->sysfs_dropped = linux_if_drops(handlep->device);
 		handlep->stat.ps_ifdrop += (u_int)(handlep->sysfs_dropped - if_dropped);
+		log_info("the infor ur intereted in is %d", handlep->stat.ps_ifdrop);
+	}
+	else
+	{
+		fprintf(stderr, "Promsc not supported\n");
+		exit(-1);
 	}
 
 	/*
@@ -2298,6 +2318,8 @@ activate_pf_packet(pcap_t *handle, int is_any_device)
 	socklen_t		len = sizeof(bpf_extensions);
 #endif
 
+log_trace("hi im here");
+
 	/*
 	 * Open a socket with protocol family packet. If cooked is true,
 	 * we open a SOCK_DGRAM socket for the cooked interface, otherwise
@@ -2330,6 +2352,8 @@ activate_pf_packet(pcap_t *handle, int is_any_device)
 		return status;
 	}
 
+log_trace("hi im here");
+
 	/*
 	 * Get the interface index of the loopback device.
 	 * If the attempt fails, don't fail, just set the
@@ -2349,6 +2373,7 @@ activate_pf_packet(pcap_t *handle, int is_any_device)
 	 */
 	handle->offset	 = 0;
 
+log_trace("hi im here");
 	/*
 	 * What kind of frames do we have to deal with? Fall back
 	 * to cooked mode if we have an unknown interface type
@@ -2358,6 +2383,7 @@ activate_pf_packet(pcap_t *handle, int is_any_device)
 		/* Assume for now we don't need cooked mode. */
 		handlep->cooked = 0;
 
+log_trace("hi im here");
 		if (handle->opt.rfmon) {
 			/*
 			 * We were asked to turn on monitor mode.
@@ -2365,13 +2391,17 @@ activate_pf_packet(pcap_t *handle, int is_any_device)
 			 * because entering monitor mode could change
 			 * the link-layer type.
 			 */
+log_trace("about to enter rfmon");
 			err = enter_rfmon_mode(handle, sock_fd, device);
 			if (err < 0) {
+log_trace("hard failure");
 				/* Hard failure */
 				close(sock_fd);
 				return err;
 			}
+log_trace("done tyring rfmon rfmon");
 			if (err == 0) {
+log_trace("decided there was error");
 				/*
 				 * Nothing worked for turning monitor mode
 				 * on.

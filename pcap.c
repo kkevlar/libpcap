@@ -3638,7 +3638,7 @@ pcap_statustostr(int errnum)
 		return ("No such device exists");
 
 	case PCAP_ERROR_RFMON_NOTSUP:
-		return ("That device doesn't support monitor mode");
+		return ("MONITOR MODE GO BYE BYE");
 
 	case PCAP_ERROR_NOT_RFMON:
 		return ("That operation is supported only in monitor mode");
